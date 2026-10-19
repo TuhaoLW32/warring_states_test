@@ -3798,5 +3798,71 @@ window.aiBuildOrders=function(n,fireMarks,attackMarks,turn){
   console.log('[v2.34 补丁] 按钮紧凑 + 人机敢战 已生效');
 })();
 </script>
+<!-- ===== v2.35 补丁：地图缓存 + 一键打包单文件 ===== -->
+<script>
+(function(){
+  /* A. 地图缓存：fenghuo_map.js 在 → 存一份；不在 → 从缓存补上 */
+  const MK='fhlh_map_cache_v1';
+  try{
+    if(window.FENGHUO_MAP&&Array.isArray(window.FENGHUO_MAP.tiles)){
+      localStorage.setItem(MK,JSON.stringify(window.FENGHUO_MAP));
+    }else{
+      const raw=localStorage.getItem(MK);
+      if(raw)window.FENGHUO_MAP=JSON.parse(raw);
+    }
+    if(window.FENGHUO_MAP&&Array.isArray(window.FENGHUO_MAP.tiles)){
+      CUSTOM_MAP=window.FENGHUO_MAP;
+    }
+  }catch(e){}
+
+  /* B. 一键打包单文件：把地图数据内联回 HTML 并下载 */
+  window.packSingleFile=function(){
+    const mapObj=window.FENGHUO_MAP||CUSTOM_MAP;
+    if(!mapObj||!Array.isArray(mapObj.tiles)){
+      alert('无地图数据可打包——请先带着 fenghuo_map.js 跑一次');
+      return;
+    }
+    try{
+      /* 归位界面，避免把对局中的显示状态带进导出文件 */
+      document.getElementById('startPage').style.display='flex';
+      document.getElementById('gamePage').style.display='none';
+      const lg=document.getElementById('log'); if(lg)lg.innerHTML='';
+      document.querySelectorAll('.mask').forEach(m=>{
+        if(m.id!=='endMask')m.classList.add('hide');
+      });
+      let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+      const safeJson=JSON.stringify(mapObj).replace(/</g,'\\u003c');
+      const inline='<script>window.FENGHUO_MAP='+safeJson+';<\/script>';
+      const extTag=/<script src=["']fenghuo_map\.js["']><\/script>/;
+      if(extTag.test(html)){
+        html=html.replace(extTag,inline);
+      }else if(html.includes('let CUSTOM_MAP=window.FENGHUO_MAP||null;')){
+        html=html.replace('let CUSTOM_MAP=window.FENGHUO_MAP||null;',
+          inline+'\nlet CUSTOM_MAP=window.FENGHUO_MAP||null;');
+      }else{
+        alert('未找到地图引用位置，打包中止');return;
+      }
+      const blob=new Blob([html],{type:'text/html'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='fenghuo_single.html';
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+    }catch(e){alert('打包失败：'+e.message);}
+  };
+
+  /* C. 主页页脚加个入口按钮 */
+  const foot=document.querySelector('.homeFoot');
+  if(foot){
+    const b=document.createElement('button');
+    b.textContent='打包单文件';
+    b.className='sndBtn';
+    b.style.cssText='letter-spacing:.12em;padding:3px 10px;';
+    b.addEventListener('click',window.packSingleFile);
+    foot.appendChild(b);
+  }
+  console.log('[v2.35 补丁] 地图缓存 + 单文件打包 已生效');
+})();
+</script>
 </body>
 </html>
