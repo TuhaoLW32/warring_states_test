@@ -2594,6 +2594,9 @@ function exitToHome(){
   if(S.mode==='watch'){S.paused=true;document.getElementById('pauseBtn').textContent='开始';}
   showStartPage();
 }
+document.addEventListener('click',function(){ensureAudio();tryPlayBgm();});
+document.addEventListener('keydown',function(){ensureAudio();tryPlayBgm();});
+function tryPlayBgm(){if(!S.bgmOn)return;
 function tryPlayBgm(){if(!S.bgmOn)return;var el=document.getElementById('bgmEl');if(el&&el.paused){el.volume=0.45;el.play().catch(function(){});}}
 
 // ===== 首页 =====
